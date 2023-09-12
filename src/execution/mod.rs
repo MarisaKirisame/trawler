@@ -72,10 +72,10 @@ impl Sampler {
 
         // TODO: should we scale the bin width? no idea.
         Sampler {
-            votes_per_user: histogram_sampler::Sampler::from_bins(votes_per_user, (100.0 * scale) as u64),
-            votes_per_story: histogram_sampler::Sampler::from_bins(votes_per_story, (10.0 * scale) as u64),
-            votes_per_comment: histogram_sampler::Sampler::from_bins(votes_per_comment, (10.0 * scale) as u64),
-            comments_per_story: histogram_sampler::Sampler::from_bins(comments_per_story, (10.0 * scale) as u64),
+            votes_per_user: histogram_sampler::Sampler::from_bins(votes_per_user, (100.0 * scale) as usize),
+            votes_per_story: histogram_sampler::Sampler::from_bins(votes_per_story, (10.0 * scale) as usize),
+            votes_per_comment: histogram_sampler::Sampler::from_bins(votes_per_comment, (10.0 * scale) as usize),
+            comments_per_story: histogram_sampler::Sampler::from_bins(comments_per_story, (10.0 * scale) as usize),
         }
     }
 
