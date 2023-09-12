@@ -25,3 +25,6 @@ whereas the latter is done by linking against this crate as a library an impleme
 `Service` trait. The latter allows benchmarking a data storage backend without also incurring
 the overhead of the Rails frontend. Note that if you want to benchmark against the Rails
 application, you must apply the patches in `lobsters.diff` first.
+
+We rolled this back to version 10.2 as newest alpha does not have warmup anymore.
+TODO: figure out if newest version have important stuff.
