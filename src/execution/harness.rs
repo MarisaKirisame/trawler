@@ -70,16 +70,15 @@ where
     MS::Response: Send + 'static,
     MS::Service: AsyncShutdown,
 {
-    let target = BASE_OPS_PER_MIN as f64 * load.scale / 60.0;
-
     // generating a request takes a while because we have to generate random numbers (including
     // zipfs). so, depending on the target load, we may need more than one load generation
     // thread. we'll make them all share the pool of issuers though.
     let generator_capacity = 100_000.0; // req/s == 10 µs to generate a request
-    assert!(
-        target < generator_capacity,
-        "one generator thread cannot generate that much load"
-    );
+    // assert!(
+    //     target < generator_capacity,
+    //    "one generator thread cannot generate that much load"
+    //);
+    // TODO: maybe we want multiple generator threads lateron
 
     let warmup = load.warmup;
     let runtime = load.runtime;
@@ -230,24 +229,18 @@ where
     let mut _nissued = 0;
     let npending = &*Box::leak(Box::new(atomic::AtomicUsize::new(0)));
     let mut rng = rand::thread_rng();
-    let interarrival_ns = rand_distr::Exp::new(target * 1e-9).unwrap();
-
+ 
     let mut waited_after_warmup = false;
-    let mut next = time::Instant::now();
-    while next < end {
+    while true {
         let mut now = time::Instant::now();
-
-        // TODO: early exit at some point?
-
-        if next > now || npending.load(atomic::Ordering::Acquire) > in_flight {
-            if now > end {
-                // don't spin after we need to be done
-                break;
-            }
+        if now > end {
+            break;
+        }
+        if  npending.load(atomic::Ordering::Acquire) > in_flight {
             atomic::spin_loop_hint();
             continue;
         }
-        if !waited_after_warmup && next > count_from {
+        if !waited_after_warmup && now > count_from {
             // we want to make sure we don't "pollute" the main run with time spent in warmup.
             // for example,if warmup has built up a queue, we want that queue to drain before we
             // start to measure runtime.
@@ -261,7 +254,6 @@ where
 
             waited_after_warmup = true;
             now = time::Instant::now();
-            next = now;
             eprintln!("--> queues flushed after warmup in {:?}", waited);
         }
 
@@ -337,7 +329,7 @@ where
             ops += 1;
         }
 
-        let issued = next;
+        let issued = now;
         let rtype = mem::discriminant(&req);
         let fut = call!(
             rt,
@@ -377,9 +369,6 @@ where
                     .saturating_record(sjrn_time.as_micros() as u64);
             });
         });
-
-        // schedule next delivery
-        next += time::Duration::from_nanos(interarrival_ns.sample(&mut rng) as u64);
     }
 
     rt.block_on(client.shutdown());
