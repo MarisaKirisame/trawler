@@ -137,7 +137,6 @@ where
 	let nstories = sampler.nstories();
 	let ncomments = sampler.ncomments();
         eprintln!("users: {nusers}, stories: {nstories}, comments: {ncomments}");
-	panic!();
         let mut rng = rand::thread_rng();
 
         // then, log in all the users
