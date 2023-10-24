@@ -12,6 +12,8 @@ use std::sync::{atomic, Arc, Mutex};
 use std::{mem, time};
 use tower_make::MakeService;
 use tower_service::Service;
+use std::time::*;
+use std::convert::TryInto;
 
 thread_local! {
     static RMT_STATS: RefCell<Stats> = RefCell::new(Stats::default());
@@ -54,6 +56,17 @@ macro_rules! spawn_call {
         let fut = call!($rt, $client, $req);
         $rt.spawn(fut)
     }};
+}
+
+pub fn duration_to_millis(d: Duration) -> u64 {
+  d.as_millis().try_into().unwrap()
+}
+
+pub fn sys_time() -> u64 {
+  match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+    Ok(n) => duration_to_millis(n),
+    Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+  }
 }
 
 pub(crate) fn run<MS>(
@@ -248,7 +261,7 @@ where
             // we want to make sure we don't "pollute" the main run with time spent in warmup.
             // for example,if warmup has built up a queue, we want that queue to drain before we
             // start to measure runtime.
-            eprintln!("--> warmup finished; flushing queues @ {:?}", now);
+            eprintln!("warmup finished at {}", sys_time());
             while npending.load(atomic::Ordering::Acquire) != 0 {
                 std::thread::yield_now();
             }
