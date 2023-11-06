@@ -246,11 +246,14 @@ where
     let mut _nissued = 0;
     let npending = &*Box::leak(Box::new(atomic::AtomicUsize::new(0)));
     let mut rng = rand::thread_rng();
- 
+    let work_need = 60 * 1000;
     let mut waited_after_warmup = false;
     while true {
         let mut now = time::Instant::now();
         if now > end {
+            // break;
+        }
+        if n_issued > work_need {
             break;
         }
         if  npending.load(atomic::Ordering::Acquire) > in_flight {
