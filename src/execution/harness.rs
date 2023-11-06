@@ -253,7 +253,7 @@ where
         if now > end {
             // break;
         }
-        if n_issued > work_need {
+        if _n_issued > work_need {
             break;
         }
         if  npending.load(atomic::Ordering::Acquire) > in_flight {
